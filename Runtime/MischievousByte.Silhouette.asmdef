@@ -1,0 +1,16 @@
+{
+    "name": "MischievousByte.Silhouette",
+    "rootNamespace": "MischievousByte.Silhouette",
+    "references": [
+        "GUID:2bad64ec9815efb4dafdadaee16bc0b9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
