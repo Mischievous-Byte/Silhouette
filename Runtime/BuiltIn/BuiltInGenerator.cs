@@ -73,7 +73,7 @@ namespace MischievousByte.Silhouette.BuiltIn
                 upperArm = new(0.29f, 0.8f, 0.015f),
                 hand = new()
                 {
-                    length = 0.2f / 1.75f,
+                    length = 0.2f / 1.76f,
                     palm = new(0.3f, -0.075f, 0f)
                 }
             }
@@ -90,97 +90,61 @@ namespace MischievousByte.Silhouette.BuiltIn
         [SkeletonGenerator]
         public static void Generate(in (Properties properties, BodyMeasurements measurements) data, out BodyTree<Matrix4x4> tree)
         {
+            var vectors = new BodyTree<Vector3>();
+
+            GenerateSpineAndHead(in data.measurements, in data.properties, ref vectors);
+            GenerateArms(in data.measurements, in data.properties, ref vectors);
+
             tree = new();
             foreach (BodyNode node in BodyNode.All.Enumerate())
-                tree[node] = Matrix4x4.identity;
-                
-
-            GenerateSpineAndHead(in data.measurements, in data.properties, ref tree);
-            GenerateArms(in data.measurements, in data.properties, ref tree);
-            //GenerateLegs(in data.measurements, in data.properties, ref tree);
+                tree[node] = Matrix4x4.Translate(vectors[node]);
+            
+            tree.ChangeSpace(Space.Self, out tree);
         }
 
-        
-        private static void GenerateSpineAndHead(in BodyMeasurements measurements, in Properties properties, ref BodyTree<Matrix4x4> tree)
+        private static void GenerateSpineAndHead(in BodyMeasurements measurements, in Properties properties, ref BodyTree<Vector3> tree)
         {
             float spineLength = properties.spine.length * measurements.height;
             float headLength = properties.head.length * measurements.height;
             float headDepth = headLength * properties.head.depth;
-            
+
             float headY = measurements.height + headLength * (-0.5f + properties.head.connection.y);
 
-            Vector3 sacrumPosition = new(0, headY - spineLength, 0); //z defaults to zero, might add property for it
-            Vector3 l3Position = new(0, Mathf.Lerp(sacrumPosition.y, headY, properties.spine.vertebrae.l3.y), spineLength * properties.spine.vertebrae.l3.x);
-            Vector3 t12Position = new(0, Mathf.Lerp(sacrumPosition.y, headY, properties.spine.vertebrae.t12.y), spineLength * properties.spine.vertebrae.t12.x);
-            Vector3 t7Position = new(0, Mathf.Lerp(sacrumPosition.y, headY, properties.spine.vertebrae.t7.y), spineLength * properties.spine.vertebrae.t7.x);
-            Vector3 c7Position = new(0, Mathf.Lerp(sacrumPosition.y, headY, properties.spine.vertebrae.c7.y), spineLength * properties.spine.vertebrae.c7.x);
 
-            Vector3 headPosition = new(0, headY, spineLength * properties.spine.skull);
-            Vector3 eyesPosition = new(0, headY - headLength / 2, headPosition.z + headPosition.z - properties.head.connection.x * headDepth + 0.5f * headDepth);
-            Vector3 headTopPosition = new Vector3(0, measurements.height, headPosition.z + headPosition.z - properties.head.connection.x * headDepth);
+            tree[BodyNode.Sacrum] = new(0, headY - spineLength, 0); //z defaults to zero, might add property for it
+            tree[BodyNode.L3] = new(0, Mathf.Lerp(tree[BodyNode.Sacrum].y, headY, properties.spine.vertebrae.l3.y), spineLength * properties.spine.vertebrae.l3.x);
+            tree[BodyNode.T12]= new(0, Mathf.Lerp(tree[BodyNode.Sacrum].y, headY, properties.spine.vertebrae.t12.y), spineLength * properties.spine.vertebrae.t12.x);
+            tree[BodyNode.T7] = new(0, Mathf.Lerp(tree[BodyNode.Sacrum].y, headY, properties.spine.vertebrae.t7.y), spineLength * properties.spine.vertebrae.t7.x);
+            tree[BodyNode.C7] = new(0, Mathf.Lerp(tree[BodyNode.Sacrum].y, headY, properties.spine.vertebrae.c7.y), spineLength * properties.spine.vertebrae.c7.x);
 
-
-            Matrix4x4 worldSacrum = Matrix4x4.Translate(sacrumPosition);
-            Matrix4x4 worldL3 = Matrix4x4.Translate(l3Position);
-            Matrix4x4 worldT12 = Matrix4x4.Translate(t12Position);
-            Matrix4x4 worldT7 = Matrix4x4.Translate(t7Position);
-            Matrix4x4 worldC7 = Matrix4x4.Translate(c7Position);
-
-            Matrix4x4 worldHead = Matrix4x4.Translate(headPosition);
-            Matrix4x4 worldEyes = Matrix4x4.Translate(eyesPosition);
-            Matrix4x4 worldHeadTop = Matrix4x4.Translate(headTopPosition);
-
-            tree[BodyNode.Sacrum] = worldSacrum;
-            tree[BodyNode.L3] = worldSacrum.inverse * worldL3;
-            tree[BodyNode.T12] = worldL3.inverse * worldT12;
-            tree[BodyNode.T7] = worldT12.inverse * worldT7;
-            tree[BodyNode.C7] = worldT7.inverse * worldC7;
-            tree[BodyNode.Head] = worldC7.inverse * worldHead;
-            tree[BodyNode.Eyes] = worldHead.inverse * worldEyes;
-            tree[BodyNode.HeadTop] = worldHead.inverse * worldHeadTop;
+            tree[BodyNode.Head] = new(0, headY, spineLength * properties.spine.skull);
+            tree[BodyNode.Eyes] = new(0, measurements.height - headLength / 2, tree[BodyNode.Head].z + tree[BodyNode.Head].z - properties.head.connection.x * headDepth + 0.5f * headDepth);
+            tree[BodyNode.HeadTop] = new Vector3(0, measurements.height, tree[BodyNode.Head].z + tree[BodyNode.Head].z - properties.head.connection.x * headDepth);
         }
 
-
-
-        private static void GenerateArms(in BodyMeasurements measurements, in Properties properties, ref BodyTree<Matrix4x4> tree)
+        private static void GenerateArms(in BodyMeasurements measurements, in Properties properties, ref BodyTree<Vector3> tree)
         {
             float spineLength = properties.spine.length * measurements.height;
 
-            Vector3 claviclePosition = properties.arm.clavicle * spineLength;
-            Vector3 scapulaPosition = properties.arm.scapula * spineLength;
-            Vector3 upperArmPosition = properties.arm.scapula * spineLength;
+            tree[BodyNode.RightClavicle] = tree[BodyNode.Sacrum] + properties.arm.clavicle * spineLength;
+            tree[BodyNode.RightScapula] = tree[BodyNode.Sacrum] + properties.arm.scapula * spineLength;
+            tree[BodyNode.RightUpperArm] = tree[BodyNode.Sacrum] + properties.arm.upperArm * spineLength;
 
             float handLength = measurements.wingspan * properties.arm.hand.length;
-            float armLength = measurements.wingspan * 0.5f - upperArmPosition.x;
+            float armLength = measurements.wingspan * 0.5f - tree[BodyNode.RightUpperArm].x;
             float segmentLength = (armLength - handLength) / 2f;
 
-            Vector3 forearmPosition = upperArmPosition + Vector3.right * segmentLength;
-            Vector3 wristPosition = forearmPosition + Vector3.right * segmentLength;
-            Vector3 handPosition = wristPosition + properties.arm.hand.palm * handLength;
+            tree[BodyNode.RightForearm]  = tree[BodyNode.RightUpperArm] + Vector3.right * segmentLength;
+            tree[BodyNode.RightWrist] = tree[BodyNode.RightForearm] + Vector3.right * segmentLength;
+            tree[BodyNode.RightHand] = tree[BodyNode.RightWrist] + properties.arm.hand.palm * handLength;
 
-            Matrix4x4 nonLocalClavicle = Matrix4x4.Translate(claviclePosition);
-            Matrix4x4 nonLocalScapula = Matrix4x4.Translate(scapulaPosition);
-            Matrix4x4 nonLocalUpperArm = Matrix4x4.Translate(upperArmPosition);
-            Matrix4x4 nonLocalForearm = Matrix4x4.Translate(forearmPosition);
-            Matrix4x4 nonLocalWrist = Matrix4x4.Translate(wristPosition);
-            Matrix4x4 nonLocalHand = Matrix4x4.Translate(handPosition);
-
-            tree[BodyNode.RightClavicle] = nonLocalClavicle;
-            tree[BodyNode.RightScapula] = nonLocalClavicle.inverse * nonLocalScapula;
-            tree[BodyNode.RightUpperArm] = nonLocalScapula.inverse * nonLocalUpperArm;
-            tree[BodyNode.RightForearm] = nonLocalUpperArm.inverse * nonLocalForearm;
-            tree[BodyNode.RightWrist] = nonLocalForearm.inverse * nonLocalWrist;
-            tree[BodyNode.RightHand] = nonLocalWrist.inverse * nonLocalHand;
-
-
-            Matrix4x4 MirrorX(in Matrix4x4 m) => Matrix4x4.Translate(new Vector3(-m.GetPosition().x, m.GetPosition().y, m.GetPosition().z));
-
-            tree[BodyNode.LeftClavicle] = MirrorX(tree[BodyNode.RightClavicle]);
-            tree[BodyNode.LeftScapula] = MirrorX(tree[BodyNode.RightScapula]);
-            tree[BodyNode.LeftUpperArm] = MirrorX(tree[BodyNode.RightUpperArm]);
-            tree[BodyNode.LeftForearm] = MirrorX(tree[BodyNode.RightForearm]);
-            tree[BodyNode.LeftWrist] = MirrorX(tree[BodyNode.RightWrist]);
-            tree[BodyNode.LeftHand] = MirrorX(tree[BodyNode.RightHand]);
+            Matrix4x4 mirror = Matrix4x4.Scale(new Vector3(-1, 1, 1));
+            tree[BodyNode.LeftClavicle] = mirror * tree[BodyNode.RightClavicle];
+            tree[BodyNode.LeftScapula] = mirror * tree[BodyNode.RightScapula];
+            tree[BodyNode.LeftUpperArm] = mirror * tree[BodyNode.RightUpperArm];
+            tree[BodyNode.LeftForearm] = mirror * tree[BodyNode.RightForearm];
+            tree[BodyNode.LeftWrist] = mirror * tree[BodyNode.RightWrist];
+            tree[BodyNode.LeftHand] = mirror * tree[BodyNode.RightHand];
         }
     }
 }
