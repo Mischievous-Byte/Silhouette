@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace MischievousByte.Silhouette.BuiltIn
 {
+    [System.Serializable]
     public struct BodyMeasurements
     {
         public float height;
