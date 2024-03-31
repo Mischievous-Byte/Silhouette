@@ -1,4 +1,5 @@
 using MischievousByte.Masquerade;
+using MischievousByte.Silhouette.BuiltIn;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ using UnityEngine.UIElements;
 
 namespace MischievousByte.Silhouette
 {
-    public delegate void GeneratorDelegate<TInput>(in TInput input, out BodyTree<Matrix4x4> tree);
+    public delegate void SkeletonGeneratorDelegate<TInput>(in TInput input, out BodyTree<Matrix4x4> tree);
 
-    public static class GeneratorRegister
+    public static class SkeletonGeneratorRegister
     {
         private static class MethodInfoLoader
         {
@@ -32,7 +33,7 @@ namespace MischievousByte.Silhouette
                     return false;
 
                 del = Delegate.CreateDelegate(
-                    typeof(RemapDelegate<>).MakeGenericType(
+                    typeof(SkeletonGeneratorDelegate<>).MakeGenericType(
                         parameters[0].ParameterType.GetElementType() ?? parameters[0].ParameterType),
                     info);
 
@@ -41,12 +42,6 @@ namespace MischievousByte.Silhouette
 
 
         }
-        private struct Entry
-        {
-            public Delegate action;
-            public BodyNode target;
-        }
-
 
         private static List<Delegate> delegates = new();
 
@@ -59,9 +54,17 @@ namespace MischievousByte.Silhouette
         private static void OnLoad() { } //Empty method to call static constructor
 
 
-        static GeneratorRegister()
+        static SkeletonGeneratorRegister()
         {
             FindFlaggedMethods();
+
+            BodyMeasurements m = new BodyMeasurements()
+            {
+                height = 1.76f,
+                wingspan = 1.8f
+            };
+
+            Find<BodyMeasurements>()(in m, out var tree);
         }
 
         private static void FindFlaggedMethods()
@@ -70,7 +73,7 @@ namespace MischievousByte.Silhouette
                 .SelectMany(assembly => assembly.GetTypes())
                 .SelectMany(type => type.GetMethods())
                 .Where(method => method.IsStatic)
-                .Select(method => (method, method.GetCustomAttribute<GeneratorAttribute>()))
+                .Select(method => (method, method.GetCustomAttribute<SkeletonGeneratorAttribute>()))
                 .Where(pair => pair.Item2 != null);
 
             foreach (var pair in pairs)
@@ -92,8 +95,8 @@ namespace MischievousByte.Silhouette
         }
 
 
-        public static GeneratorDelegate<TInput> Find<TInput>() =>
-            delegates.Where(e => e is GeneratorDelegate<TInput>)
-            .FirstOrDefault() as GeneratorDelegate<TInput>;
+        public static SkeletonGeneratorDelegate<TInput> Find<TInput>() =>
+            delegates.Where(e => e is SkeletonGeneratorDelegate<TInput>)
+            .FirstOrDefault() as SkeletonGeneratorDelegate<TInput>;
     }
 }

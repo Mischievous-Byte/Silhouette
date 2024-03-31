@@ -100,8 +100,8 @@ namespace MischievousByte.Silhouette
         }
 
 
-        public static GeneratorDelegate<TInput> Find<TInput>(BodyNode target) =>
-            entries.Where(e => e.target == target && e.action is GeneratorDelegate<TInput>)
-            .FirstOrDefault().action as GeneratorDelegate<TInput>;
+        public static SkeletonGeneratorDelegate<TInput> Find<TInput>(BodyNode target) =>
+            entries.Where(e => e.target == target && e.action is SkeletonGeneratorDelegate<TInput>)
+            .FirstOrDefault().action as SkeletonGeneratorDelegate<TInput>;
     }
 }

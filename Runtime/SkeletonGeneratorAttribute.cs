@@ -7,5 +7,5 @@ using UnityEngine;
 namespace MischievousByte.Silhouette
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public class GeneratorAttribute : Attribute { }
+    public class SkeletonGeneratorAttribute : Attribute { }
 }
