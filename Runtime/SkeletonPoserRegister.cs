@@ -4,43 +4,23 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MischievousByte.Silhouette
 {
-    public delegate void PoserDelegate<TInput>(in TInput input, ref BodyTree<Matrix4x4> tree);
 
-    public static class PoserRegister
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public class SkeletonPoserAttribute : Attribute
     {
-        private static class MethodInfoLoader
-        {
+        public readonly BodyNode Target;
 
-            public static bool TryCreateDelegate(MethodInfo info, out Delegate del)
-            {
-                del = null;
-                ParameterInfo[] parameters = info.GetParameters();
+        public SkeletonPoserAttribute(BodyNode target) => Target = target;
+    }
 
-                if (parameters.Length != 2)
-                    return false;
+    public delegate void SkeletonPoserDelegate<TInput>(in TInput input, ref BodyTree<Matrix4x4> tree);
 
-                if (!parameters[0].IsIn)
-                    return false;
-
-                if (parameters[1].IsOut || parameters[1].IsIn || !parameters[1].ParameterType.IsByRef || parameters[1].ParameterType.GetElementType() != typeof(BodyTree<Matrix4x4>))
-                    return false;
-
-                del = Delegate.CreateDelegate(
-                    typeof(PoserDelegate<>).MakeGenericType(
-                        parameters[0].ParameterType.GetElementType() ?? parameters[0].ParameterType),
-                    info);
-
-                return true;
-            }
-
-
-        }
+    public static class SkeletonPoserRegister
+    {
         private struct Entry
         {
             public Delegate action;
@@ -59,7 +39,7 @@ namespace MischievousByte.Silhouette
         private static void OnLoad() { } //Empty method to call static constructor
 
 
-        static PoserRegister()
+        static SkeletonPoserRegister()
         {
             FindFlaggedMethods();
         }
@@ -70,12 +50,12 @@ namespace MischievousByte.Silhouette
                 .SelectMany(assembly => assembly.GetTypes())
                 .SelectMany(type => type.GetMethods())
                 .Where(method => method.IsStatic)
-                .Select(method => (method, method.GetCustomAttribute<PoserAttribute>()))
+                .Select(method => (method, method.GetCustomAttribute<SkeletonPoserAttribute>()))
                 .Where(pair => pair.Item2 != null);
 
             foreach (var pair in pairs)
             {
-                if (!MethodInfoLoader.TryCreateDelegate(pair.method, out var del))
+                if (!TryCreateDelegate(pair.method, out var del))
                 {
                     Debug.LogWarning($"{pair.method.Name} is flagged as generator, but doesn't match any delegate.");
                     continue;
@@ -97,6 +77,29 @@ namespace MischievousByte.Silhouette
 
                 
             }
+        }
+
+
+        private static bool TryCreateDelegate(MethodInfo info, out Delegate del)
+        {
+            del = null;
+            ParameterInfo[] parameters = info.GetParameters();
+
+            if (parameters.Length != 2)
+                return false;
+
+            if (!parameters[0].IsIn)
+                return false;
+
+            if (parameters[1].IsOut || parameters[1].IsIn || !parameters[1].ParameterType.IsByRef || parameters[1].ParameterType.GetElementType() != typeof(BodyTree<Matrix4x4>))
+                return false;
+
+            del = Delegate.CreateDelegate(
+                typeof(SkeletonPoserDelegate<>).MakeGenericType(
+                    parameters[0].ParameterType.GetElementType() ?? parameters[0].ParameterType),
+                info);
+
+            return true;
         }
 
 

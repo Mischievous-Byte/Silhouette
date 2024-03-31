@@ -5,44 +5,17 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MischievousByte.Silhouette
 {
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    public class SkeletonGeneratorAttribute : Attribute { }
+
     public delegate void SkeletonGeneratorDelegate<TInput>(in TInput input, out BodyTree<Matrix4x4> tree);
 
     public static class SkeletonGeneratorRegister
     {
-        private static class MethodInfoLoader
-        {
-
-            public static bool TryCreateDelegate(MethodInfo info, out Delegate del)
-            {
-                del = null;
-                ParameterInfo[] parameters = info.GetParameters();
-
-                if (parameters.Length != 2)
-                    return false;
-
-                if (!parameters[0].IsIn)
-                    return false;
-
-                if (!parameters[1].IsOut || parameters[1].ParameterType != typeof(BodyTree<Matrix4x4>).MakeByRefType())
-                    return false;
-
-                del = Delegate.CreateDelegate(
-                    typeof(SkeletonGeneratorDelegate<>).MakeGenericType(
-                        parameters[0].ParameterType.GetElementType() ?? parameters[0].ParameterType),
-                    info);
-
-                return true;
-            }
-
-
-        }
-
         private static List<Delegate> delegates = new();
 
 
@@ -78,7 +51,7 @@ namespace MischievousByte.Silhouette
 
             foreach (var pair in pairs)
             {
-                if (!MethodInfoLoader.TryCreateDelegate(pair.method, out var del))
+                if (!TryCreateDelegate(pair.method, out var del))
                 {
                     Debug.LogWarning($"{pair.method.Name} is flagged as generator, but doesn't match any delegate.");
                     continue;
@@ -94,6 +67,27 @@ namespace MischievousByte.Silhouette
             }
         }
 
+        private static bool TryCreateDelegate(MethodInfo info, out Delegate del)
+        {
+            del = null;
+            ParameterInfo[] parameters = info.GetParameters();
+
+            if (parameters.Length != 2)
+                return false;
+
+            if (!parameters[0].IsIn)
+                return false;
+
+            if (!parameters[1].IsOut || parameters[1].ParameterType != typeof(BodyTree<Matrix4x4>).MakeByRefType())
+                return false;
+
+            del = Delegate.CreateDelegate(
+                typeof(SkeletonGeneratorDelegate<>).MakeGenericType(
+                    parameters[0].ParameterType.GetElementType() ?? parameters[0].ParameterType),
+                info);
+
+            return true;
+        }
 
         public static SkeletonGeneratorDelegate<TInput> Find<TInput>() =>
             delegates.Where(e => e is SkeletonGeneratorDelegate<TInput>)
