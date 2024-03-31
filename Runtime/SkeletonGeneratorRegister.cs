@@ -30,14 +30,6 @@ namespace MischievousByte.Silhouette
         static SkeletonGeneratorRegister()
         {
             FindFlaggedMethods();
-
-            BodyMeasurements m = new BodyMeasurements()
-            {
-                height = 1.76f,
-                wingspan = 1.8f
-            };
-
-            Find<BodyMeasurements>()(in m, out var tree);
         }
 
         private static void FindFlaggedMethods()
