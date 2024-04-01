@@ -3,7 +3,6 @@ using MischievousByte.Masquerade.Utility;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
 
 namespace MischievousByte.Silhouette.BuiltIn
@@ -69,7 +68,7 @@ namespace MischievousByte.Silhouette.BuiltIn
             arm = new()
             {
                 clavicle = new(0.03f, 0.86f, 0.18f),
-                scapula = new(0.14f, 0.65f, -0.1f),
+                scapula = new(0.27f, 0.83f, -0.02f),
                 upperArm = new(0.29f, 0.8f, 0.015f),
                 hand = new()
                 {
