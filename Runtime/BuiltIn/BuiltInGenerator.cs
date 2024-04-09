@@ -33,7 +33,7 @@ namespace MischievousByte.Silhouette.BuiltIn
             public struct Arm
             {
                 public Vector3 clavicle;
-                public Vector3 scapula;
+                //public Vector3 scapula;
                 public Vector3 upperArm;
                 public (float length, Vector3 palm) hand;
             }
@@ -68,7 +68,7 @@ namespace MischievousByte.Silhouette.BuiltIn
             arm = new()
             {
                 clavicle = new(0.03f, 0.86f, 0.18f),
-                scapula = new(0.27f, 0.83f, -0.02f),
+                //scapula = new(0.27f, 0.83f, -0.02f),
                 upperArm = new(0.29f, 0.8f, 0.015f),
                 hand = new()
                 {
@@ -126,7 +126,7 @@ namespace MischievousByte.Silhouette.BuiltIn
             float spineLength = properties.spine.length * measurements.height;
 
             tree[BodyNode.RightClavicle] = tree[BodyNode.Sacrum] + properties.arm.clavicle * spineLength;
-            tree[BodyNode.RightScapula] = tree[BodyNode.Sacrum] + properties.arm.scapula * spineLength;
+            //tree[BodyNode.RightScapula] = tree[BodyNode.Sacrum] + properties.arm.scapula * spineLength;
             tree[BodyNode.RightUpperArm] = tree[BodyNode.Sacrum] + properties.arm.upperArm * spineLength;
 
             float handLength = measurements.wingspan * properties.arm.hand.length;
@@ -139,7 +139,7 @@ namespace MischievousByte.Silhouette.BuiltIn
 
             Matrix4x4 mirror = Matrix4x4.Scale(new Vector3(-1, 1, 1));
             tree[BodyNode.LeftClavicle] = mirror * tree[BodyNode.RightClavicle];
-            tree[BodyNode.LeftScapula] = mirror * tree[BodyNode.RightScapula];
+            //tree[BodyNode.LeftScapula] = mirror * tree[BodyNode.RightScapula];
             tree[BodyNode.LeftUpperArm] = mirror * tree[BodyNode.RightUpperArm];
             tree[BodyNode.LeftForearm] = mirror * tree[BodyNode.RightForearm];
             tree[BodyNode.LeftWrist] = mirror * tree[BodyNode.RightWrist];
